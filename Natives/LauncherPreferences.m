@@ -103,6 +103,7 @@ NSString* getSelectedJavaHome(NSString* defaultJRETag, int minVersion) {
     NSDictionary<NSString *, NSString *> *selected = pref[@"0"];
     NSString *selectedVer = selected[defaultJRETag];
     if (minVersion > selectedVer.intValue) {
+        selectedVer = nil;
         NSArray *sortedVersions = [pref.allKeys valueForKeyPath:@"self.integerValue"];
         sortedVersions = [sortedVersions sortedArrayUsingSelector:@selector(compare:)];
         for (NSNumber *version in sortedVersions) {
@@ -112,8 +113,22 @@ NSString* getSelectedJavaHome(NSString* defaultJRETag, int minVersion) {
             }
         }
         if (!selectedVer) {
-            NSLog(@"Error: requested Java >= %d was not installed!", minVersion);
-            return nil;
+            // Preferences saved by an older build may not list a newer bundled runtime (e.g. Java 25)
+            NSString *internalPath = [NSString stringWithFormat:@"%@/java_runtimes", NSBundle.mainBundle.bundlePath];
+            NSString *internalName = nil;
+            int internalVer = 0;
+            for (NSString *name in [NSFileManager.defaultManager contentsOfDirectoryAtPath:internalPath error:nil]) {
+                int version = [name hasPrefix:@"java-"] ? [name substringFromIndex:5].intValue : 0;
+                if (version >= minVersion && (!internalName || version < internalVer)) {
+                    internalName = name;
+                    internalVer = version;
+                }
+            }
+            if (!internalName) {
+                NSLog(@"Error: requested Java >= %d was not installed!", minVersion);
+                return nil;
+            }
+            return [internalPath stringByAppendingPathComponent:internalName];
         }
     }
 
