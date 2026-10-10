@@ -1357,4 +1357,56 @@ public class GLFW
         // Fast path, but will return true if one has the same prefix
         return glGetString(GL_EXTENSIONS).contains(ext);
     }
+
+    // GLFW 3.4 functions called by newer Minecraft versions, mirroring Amethyst-Android's GLFW shim
+    public static boolean glfwPlatformSupported(int platform) {
+        return platform == GLFW_PLATFORM_X11;
+    }
+
+    public static void glfwFocusWindow(@NativeType("GLFWwindow *") long window) {}
+
+    public static void glfwHideWindow(@NativeType("GLFWwindow *") long window) {}
+
+    public static void glfwIconifyWindow(@NativeType("GLFWwindow *") long window) {}
+
+    public static void glfwRestoreWindow(@NativeType("GLFWwindow *") long window) {}
+
+    public static void glfwMaximizeWindow(@NativeType("GLFWwindow *") long window) {}
+
+    public static void glfwSetWindowAspectRatio(@NativeType("GLFWwindow *") long window, int numer, int denom) {}
+
+    public static void glfwSetGamma(@NativeType("GLFWmonitor *") long monitor, float gamma) {}
+
+    public static float glfwGetWindowOpacity(@NativeType("GLFWwindow *") long window) {
+        return 1.0f;
+    }
+
+    public static void glfwSetWindowOpacity(@NativeType("GLFWwindow *") long window, float opacity) {}
+
+    @Nullable
+    @NativeType("char const *")
+    public static String glfwGetMonitorName(@NativeType("GLFWmonitor *") long monitor) {
+        return "iOS Display";
+    }
+
+    private static final HashMap<Long, Long> mGLFWWindowUserPointers = new HashMap<>();
+    private static final HashMap<Long, Long> mGLFWMonitorUserPointers = new HashMap<>();
+
+    public static void glfwSetWindowUserPointer(@NativeType("GLFWwindow *") long window, @NativeType("void *") long pointer) {
+        mGLFWWindowUserPointers.put(window, pointer);
+    }
+
+    @NativeType("void *")
+    public static long glfwGetWindowUserPointer(@NativeType("GLFWwindow *") long window) {
+        return mGLFWWindowUserPointers.getOrDefault(window, 0L);
+    }
+
+    public static void glfwSetMonitorUserPointer(@NativeType("GLFWmonitor *") long monitor, @NativeType("void *") long pointer) {
+        mGLFWMonitorUserPointers.put(monitor, pointer);
+    }
+
+    @NativeType("void *")
+    public static long glfwGetMonitorUserPointer(@NativeType("GLFWmonitor *") long monitor) {
+        return mGLFWMonitorUserPointers.getOrDefault(monitor, 0L);
+    }
 }
