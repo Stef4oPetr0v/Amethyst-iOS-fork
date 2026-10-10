@@ -1357,4 +1357,153 @@ public class GLFW
         // Fast path, but will return true if one has the same prefix
         return glGetString(GL_EXTENSIONS).contains(ext);
     }
+
+    // GLFW 3.4 functions called by newer Minecraft versions, mirroring Amethyst-Android's GLFW shim
+    public static boolean glfwPlatformSupported(int platform) {
+        return platform == GLFW_PLATFORM_X11;
+    }
+
+    public static void glfwFocusWindow(@NativeType("GLFWwindow *") long window) {}
+
+    public static void glfwHideWindow(@NativeType("GLFWwindow *") long window) {}
+
+    public static void glfwIconifyWindow(@NativeType("GLFWwindow *") long window) {}
+
+    public static void glfwRestoreWindow(@NativeType("GLFWwindow *") long window) {}
+
+    public static void glfwMaximizeWindow(@NativeType("GLFWwindow *") long window) {}
+
+    public static void glfwSetWindowAspectRatio(@NativeType("GLFWwindow *") long window, int numer, int denom) {}
+
+    public static void glfwSetGamma(@NativeType("GLFWmonitor *") long monitor, float gamma) {}
+
+    public static float glfwGetWindowOpacity(@NativeType("GLFWwindow *") long window) {
+        return 1.0f;
+    }
+
+    public static void glfwSetWindowOpacity(@NativeType("GLFWwindow *") long window, float opacity) {}
+
+    @Nullable
+    @NativeType("char const *")
+    public static String glfwGetMonitorName(@NativeType("GLFWmonitor *") long monitor) {
+        return "iOS Display";
+    }
+
+    private static final HashMap<Long, Long> mGLFWWindowUserPointers = new HashMap<>();
+    private static final HashMap<Long, Long> mGLFWMonitorUserPointers = new HashMap<>();
+
+    public static void glfwSetWindowUserPointer(@NativeType("GLFWwindow *") long window, @NativeType("void *") long pointer) {
+        mGLFWWindowUserPointers.put(window, pointer);
+    }
+
+    @NativeType("void *")
+    public static long glfwGetWindowUserPointer(@NativeType("GLFWwindow *") long window) {
+        return mGLFWWindowUserPointers.getOrDefault(window, 0L);
+    }
+
+    public static void glfwSetMonitorUserPointer(@NativeType("GLFWmonitor *") long monitor, @NativeType("void *") long pointer) {
+        mGLFWMonitorUserPointers.put(monitor, pointer);
+    }
+
+    @NativeType("void *")
+    public static long glfwGetMonitorUserPointer(@NativeType("GLFWmonitor *") long monitor) {
+        return mGLFWMonitorUserPointers.getOrDefault(monitor, 0L);
+    }
+
+    // LWJGL 3.4 IME functions called by Minecraft 26.1, mirroring Amethyst-Android's lwjgl-3.4.1 GLFW shim
+    public static final int GLFW_IME = 0x33007;
+
+    public static GLFWPreeditCallback mGLFWPreeditCallback;
+    public static GLFWIMEStatusCallback mGLFWIMEStatusCallback;
+    public static GLFWPreeditCandidateCallback mGLFWPreeditCandidateCallback;
+
+    public static GLFWPreeditCallback glfwSetPreeditCallback(@NativeType("GLFWwindow *") long window, @Nullable @NativeType("GLFWpreeditfun") GLFWPreeditCallbackI cbfun) {
+        GLFWPreeditCallback lastCallback = mGLFWPreeditCallback;
+        if (cbfun == null) mGLFWPreeditCallback = null;
+        else mGLFWPreeditCallback = GLFWPreeditCallback.create(cbfun);
+
+        return lastCallback;
+    }
+
+    public static GLFWIMEStatusCallback glfwSetIMEStatusCallback(@NativeType("GLFWwindow *") long window, @Nullable @NativeType("GLFWimestatusfun") GLFWIMEStatusCallbackI cbfun) {
+        GLFWIMEStatusCallback lastCallback = mGLFWIMEStatusCallback;
+        if (cbfun == null) mGLFWIMEStatusCallback = null;
+        else mGLFWIMEStatusCallback = GLFWIMEStatusCallback.create(cbfun);
+
+        return lastCallback;
+    }
+
+    public static GLFWPreeditCandidateCallback glfwSetPreeditCandidateCallback(@NativeType("GLFWwindow *") long window, @Nullable @NativeType("GLFWpreeditcandidatefun") GLFWPreeditCandidateCallbackI cbfun) {
+        GLFWPreeditCandidateCallback lastCallback = mGLFWPreeditCandidateCallback;
+        if (cbfun == null) mGLFWPreeditCandidateCallback = null;
+        else mGLFWPreeditCandidateCallback = GLFWPreeditCandidateCallback.create(cbfun);
+
+        return lastCallback;
+    }
+
+    public static void glfwGetPreeditCursorRectangle(@NativeType("GLFWwindow *") long window, @Nullable @NativeType("int *") IntBuffer x, @Nullable @NativeType("int *") IntBuffer y, @Nullable @NativeType("int *") IntBuffer w, @Nullable @NativeType("int *") IntBuffer h) {}
+
+    public static void glfwGetPreeditCursorRectangle(@NativeType("GLFWwindow *") long window, @Nullable @NativeType("int *") int[] x, @Nullable @NativeType("int *") int[] y, @Nullable @NativeType("int *") int[] w, @Nullable @NativeType("int *") int[] h) {}
+
+    public static void glfwSetPreeditCursorRectangle(@NativeType("GLFWwindow *") long window, int x, int y, int w, int h) {}
+
+    public static void glfwResetPreeditText(@NativeType("GLFWwindow *") long window) {}
+
+    @Nullable
+    @NativeType("unsigned int *")
+    public static IntBuffer glfwGetPreeditCandidate(@NativeType("GLFWwindow *") long window, int index) {
+        return null;
+    }
+
+    @Nullable
+    @NativeType("char const *")
+    public static String glfwGetWindowTitle(@NativeType("GLFWwindow *") long window) {
+        CharSequence title = internalGetWindow(window).title;
+        return title == null ? null : title.toString();
+    }
+
+    // Other GLFW functions Amethyst-Android's lwjgl-3.4.1 GLFW shim provides. Window size and framebuffer
+    // size are the same here, so content scale is 1. Buffers are written at their position, like LWJGL.
+    public static void glfwGetWindowContentScale(@NativeType("GLFWwindow *") long window, @Nullable @NativeType("float *") FloatBuffer xscale, @Nullable @NativeType("float *") FloatBuffer yscale) {
+        if (xscale != null) xscale.put(xscale.position(), 1.0f);
+        if (yscale != null) yscale.put(yscale.position(), 1.0f);
+    }
+
+    public static void glfwGetWindowContentScale(@NativeType("GLFWwindow *") long window, @Nullable @NativeType("float *") float[] xscale, @Nullable @NativeType("float *") float[] yscale) {
+        if (xscale != null) xscale[0] = 1.0f;
+        if (yscale != null) yscale[0] = 1.0f;
+    }
+
+    public static void glfwGetMonitorContentScale(@NativeType("GLFWmonitor *") long monitor, @Nullable @NativeType("float *") FloatBuffer xscale, @Nullable @NativeType("float *") FloatBuffer yscale) {
+        if (xscale != null) xscale.put(xscale.position(), 1.0f);
+        if (yscale != null) yscale.put(yscale.position(), 1.0f);
+    }
+
+    public static void glfwGetMonitorContentScale(@NativeType("GLFWmonitor *") long monitor, @Nullable @NativeType("float *") float[] xscale, @Nullable @NativeType("float *") float[] yscale) {
+        if (xscale != null) xscale[0] = 1.0f;
+        if (yscale != null) yscale[0] = 1.0f;
+    }
+
+    public static void glfwGetMonitorPhysicalSize(@NativeType("GLFWmonitor *") long monitor, @Nullable @NativeType("int *") IntBuffer widthMM, @Nullable @NativeType("int *") IntBuffer heightMM) {
+        if (widthMM != null) widthMM.put(widthMM.position(), mGLFWWindowWidth);
+        if (heightMM != null) heightMM.put(heightMM.position(), mGLFWWindowHeight);
+    }
+
+    public static void glfwGetMonitorPhysicalSize(@NativeType("GLFWmonitor *") long monitor, @Nullable @NativeType("int *") int[] widthMM, @Nullable @NativeType("int *") int[] heightMM) {
+        if (widthMM != null) widthMM[0] = mGLFWWindowWidth;
+        if (heightMM != null) heightMM[0] = mGLFWWindowHeight;
+    }
+
+    public static void glfwGetWindowFrameSize(@NativeType("GLFWwindow *") long window, @Nullable @NativeType("int *") IntBuffer left, @Nullable @NativeType("int *") IntBuffer top, @Nullable @NativeType("int *") IntBuffer right, @Nullable @NativeType("int *") IntBuffer bottom) {
+        if (left != null) left.put(left.position(), 0);
+        if (top != null) top.put(top.position(), 0);
+        if (right != null) right.put(right.position(), internalGetWindow(window).width);
+        if (bottom != null) bottom.put(bottom.position(), internalGetWindow(window).height);
+    }
+
+    @Nullable
+    @NativeType("unsigned char const *")
+    public static ByteBuffer glfwGetJoystickHats(int jid) {
+        return jid == GLFW_JOYSTICK_1 ? ByteBuffer.allocate(0) : null;
+    }
 }
