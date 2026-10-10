@@ -1,0 +1,53 @@
+name: LWJGL compatibility check
+
+# One-off diagnostic: lists the LWJGL API Minecraft uses that the iOS launcher's lwjgl.jar lacks.
+# Nothing is uploaded; the report is in the job log.
+
+on:
+  push:
+    branches: [lwjgl-compat-check]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Minecraft version
+        default: '26.1'
+      launcher_ref:
+        description: Launcher branch to build lwjgl.jar from
+        default: glfw34-patch
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout checker
+        uses: actions/checkout@main
+        with:
+          path: checker
+
+      - name: Checkout launcher
+        uses: actions/checkout@main
+        with:
+          ref: ${{ inputs.launcher_ref || 'glfw34-patch' }}
+          path: launcher
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Build lwjgl.jar
+        run: |
+          # com.apple.eawt only exists in the macOS JDK; a stub is enough to compile the launcher classes
+          mkdir -p stub/src/com/apple/eawt stub/classes launcher/JavaApp/libs/zz_stub
+          echo 'package com.apple.eawt; public class Application { public static Application getApplication() { return null; } }' > stub/src/com/apple/eawt/Application.java
+          "$JAVA_HOME/bin/javac" -d stub/classes stub/src/com/apple/eawt/Application.java
+          "$JAVA_HOME/bin/jar" cf launcher/JavaApp/libs/zz_stub/eawt.jar -C stub/classes .
+          make -C launcher/JavaApp BOOTJDK="$JAVA_HOME/bin" build/lwjgl.jar > build.log 2>&1 || { tail -50 build.log; exit 1; }
+          ls -la launcher/JavaApp/build/lwjgl.jar
+          git -C launcher log -1 --format='Launcher commit %h %s'
+
+      - name: Check Minecraft
+        run: |
+          python3 -I checker/lwjgl_compat_check.py --version "${{ inputs.version || '26.1' }}" \
+            --lwjgl launcher/JavaApp/build/lwjgl.jar --jdk "$JAVA_HOME/jre/lib/rt.jar" --cache "$RUNNER_TEMP/mc-cache" --dump
