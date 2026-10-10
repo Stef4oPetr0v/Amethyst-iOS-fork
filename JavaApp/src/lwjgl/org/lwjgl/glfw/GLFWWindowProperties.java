@@ -11,6 +11,11 @@ public class GLFWWindowProperties {
     public long monitor;
     public Map<Integer, Integer> inputModes = new HashMap<>();
     public Map<Integer, Integer> windowAttribs = new HashMap<>();
+
+    {
+        // glfwGetInputMode() fails on modes that were never set; Amethyst-Android also defaults this one
+        inputModes.put(GLFW.GLFW_IME, GLFW.GLFW_FALSE);
+    }
     
     @Override
     public String toString() {
