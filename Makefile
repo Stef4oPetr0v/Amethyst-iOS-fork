@@ -104,11 +104,11 @@ else
 $(error PLATFORM is not valid.)
 endif
 
-POJAV_BUNDLE_DIR      ?= $(OUTPUTDIR)/AngelAuraAmethyst.app
-POJAV_JRE8_DIR        ?= $(SOURCEDIR)/depends/java-8-openjdk
-POJAV_JRE17_DIR       ?= $(SOURCEDIR)/depends/java-17-openjdk
-POJAV_JRE21_DIR       ?= $(SOURCEDIR)/depends/java-21-openjdk
-POJAV_JRE25_DIR       ?= $(SOURCEDIR)/depends/java-25-openjdk
+AME_BUNDLE_DIR      ?= $(OUTPUTDIR)/AngelAuraAmethyst.app
+AME_JRE8_DIR        ?= $(SOURCEDIR)/depends/java-8-openjdk
+AME_JRE17_DIR       ?= $(SOURCEDIR)/depends/java-17-openjdk
+AME_JRE21_DIR       ?= $(SOURCEDIR)/depends/java-21-openjdk
+AME_JRE25_DIR       ?= $(SOURCEDIR)/depends/java-25-openjdk
 
 # Function to use later for checking dependencies
 METHOD_DEPCHECK   = $(shell $(1) >/dev/null 2>&1 && echo 1)
@@ -160,7 +160,7 @@ METHOD_JAVA_UNPACK = \
 	cd $(SOURCEDIR)/depends; \
 	if [ ! -f "java-$(1)-openjdk/release" ] && [ ! -f "$(ls jre$(1)-*.tar.xz)" ]; then \
 		if [ "$(RUNNER)" != "1" ]; then \
-			wget '$(2)' -q --show-progress; \
+			curl -OJfSL '$(2)'; \
 			unzip jre*-ios-aarch64.zip && rm jre*-ios-aarch64.zip; \
 		fi; \
 		mkdir -p java-$(1)-openjdk; \
@@ -200,8 +200,8 @@ ifneq ($(call METHOD_DEPCHECK,ldid),1)
 $(error You need to install ldid)
 endif
 
-ifneq ($(call METHOD_DEPCHECK,wget --version),1)
-$(error You need to install wget)
+ifneq ($(call METHOD_DEPCHECK,curl --version),1)
+$(error You need to install curl)
 endif
 
 ifeq ($(DETECTPLAT),Linux)
@@ -295,10 +295,10 @@ jre: native
 	cd $(SOURCEDIR); \
 	rm -rf $(SOURCEDIR)/depends/java-*-openjdk/{ASSEMBLY_EXCEPTION,bin,include,jre,legal,LICENSE,man,THIRD_PARTY_README,lib/{ct.sym,jspawnhelper,libjsig.dylib,src.zip,tools.jar}}; \
 	$(call METHOD_DIRCHECK,$(OUTPUTDIR)/java_runtimes); \
-	cp -R $(POJAV_JRE8_DIR) $(OUTPUTDIR)/java_runtimes; \
-	cp -R $(POJAV_JRE17_DIR) $(OUTPUTDIR)/java_runtimes; \
-	cp -R $(POJAV_JRE21_DIR) $(OUTPUTDIR)/java_runtimes; \
-	cp -R $(POJAV_JRE25_DIR) $(OUTPUTDIR)/java_runtimes; \
+	cp -R $(AME_JRE8_DIR) $(OUTPUTDIR)/java_runtimes; \
+	cp -R $(AME_JRE17_DIR) $(OUTPUTDIR)/java_runtimes; \
+	cp -R $(AME_JRE21_DIR) $(OUTPUTDIR)/java_runtimes; \
+	cp -R $(AME_JRE25_DIR) $(OUTPUTDIR)/java_runtimes; \
 	cp $(WORKINGDIR)/libawt_xawt.dylib $(OUTPUTDIR)/java_runtimes/java-8-openjdk/lib; \
 	cp $(WORKINGDIR)/libawt_xawt.dylib $(OUTPUTDIR)/java_runtimes/java-17-openjdk/lib;
 	cp $(WORKINGDIR)/libawt_xawt.dylib $(OUTPUTDIR)/java_runtimes/java-21-openjdk/lib;

@@ -304,7 +304,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     JNIEnv *env;
     (*runtimeJavaVMPtr)->GetEnv(runtimeJavaVMPtr, (void **)&env, JNI_VERSION_1_4);
     registerOpenHandler(env);
-    if (!getenv("POJAV_SKIP_JNI_GLFW")) {
+    if (!getenv("AME_SKIP_JNI_GLFW")) {
         runtimeJNIEnvPtr = env;
         // GLFW bridge setup is deferred to first use (ensureGLFWBridge).
         // Doing it here can force org.lwjgl.glfw.GLFW.<clinit> while
