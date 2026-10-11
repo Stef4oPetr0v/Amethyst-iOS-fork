@@ -14,6 +14,9 @@ on:
       launcher_ref:
         description: Launcher branch to build lwjgl.jar from
         default: glfw34-patch
+      lwjgl_jar:
+        description: Jar to check, relative to JavaApp (build/lwjgl-3.4.1.jar on branches with per-version LWJGL)
+        default: build/lwjgl.jar
 
 jobs:
   check:
@@ -43,11 +46,11 @@ jobs:
           echo 'package com.apple.eawt; public class Application { public static Application getApplication() { return null; } }' > stub/src/com/apple/eawt/Application.java
           "$JAVA_HOME/bin/javac" -d stub/classes stub/src/com/apple/eawt/Application.java
           "$JAVA_HOME/bin/jar" cf launcher/JavaApp/libs/zz_stub/eawt.jar -C stub/classes .
-          make -C launcher/JavaApp BOOTJDK="$JAVA_HOME/bin" build/lwjgl.jar > build.log 2>&1 || { tail -50 build.log; exit 1; }
-          ls -la launcher/JavaApp/build/lwjgl.jar
+          make -C launcher/JavaApp BOOTJDK="$JAVA_HOME/bin" all > build.log 2>&1 || { tail -50 build.log; exit 1; }
+          ls -la launcher/JavaApp/build/*.jar
           git -C launcher log -1 --format='Launcher commit %h %s'
 
       - name: Check Minecraft
         run: |
           python3 -I checker/lwjgl_compat_check.py --version "${{ inputs.version || '26.1' }}" \
-            --lwjgl launcher/JavaApp/build/lwjgl.jar --jdk "$JAVA_HOME/jre/lib/rt.jar" --cache "$RUNNER_TEMP/mc-cache" --dump
+            --lwjgl "launcher/JavaApp/${{ inputs.lwjgl_jar || 'build/lwjgl.jar' }}" --jdk "$JAVA_HOME/jre/lib/rt.jar" --cache "$RUNNER_TEMP/mc-cache" --dump
