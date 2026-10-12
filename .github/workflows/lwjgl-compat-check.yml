@@ -17,6 +17,9 @@ on:
       lwjgl_jar:
         description: Jar to check, relative to JavaApp (build/lwjgl-3.4.1.jar on branches with per-version LWJGL)
         default: build/lwjgl.jar
+      mods:
+        description: Fabric mods to check too, as space-separated modrinth-slug:version-substring
+        default: ''
 
 jobs:
   check:
@@ -50,7 +53,38 @@ jobs:
           ls -la launcher/JavaApp/build/*.jar
           git -C launcher log -1 --format='Launcher commit %h %s'
 
+      - name: Download mods
+        if: ${{ inputs.mods != '' }}
+        env:
+          MODS: ${{ inputs.mods }}
+          MC_VERSION: ${{ inputs.version || '26.1' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/mods"
+          python3 -I - "$RUNNER_TEMP/mods" <<'PY'
+          import hashlib, json, os, sys, urllib.parse, urllib.request
+          out = sys.argv[1]
+          game = json.dumps([os.environ['MC_VERSION']])
+          for spec in os.environ['MODS'].split():
+              slug, _, want = spec.partition(':')
+              url = 'https://api.modrinth.com/v2/project/%s/version?loaders=%s&game_versions=%s' % (
+                  slug, urllib.parse.quote('["fabric"]'), urllib.parse.quote(game))
+              req = urllib.request.Request(url, headers={'User-Agent': 'amethyst-ios-fork lwjgl-compat-check'})
+              versions = json.load(urllib.request.urlopen(req))
+              match = next((v for v in versions if want in v['version_number']), None)
+              if match is None:
+                  print('mod', slug, 'has no', os.environ['MC_VERSION'], 'Fabric version matching', repr(want))
+                  continue
+              f = next((f for f in match['files'] if f['primary']), match['files'][0])
+              data = urllib.request.urlopen(urllib.request.Request(f['url'], headers=req.headers)).read()
+              if hashlib.sha512(data).hexdigest() != f['hashes']['sha512']:
+                  sys.exit('SHA-512 mismatch for ' + f['url'])
+              open(os.path.join(out, f['filename']), 'wb').write(data)
+              print('mod', slug, match['version_number'], f['filename'])
+          PY
+
       - name: Check Minecraft
         run: |
-          python3 -I checker/lwjgl_compat_check.py --version "${{ inputs.version || '26.1' }}" \
+          mod_args=()
+          for j in "$RUNNER_TEMP"/mods/*.jar; do if [ -f "$j" ]; then mod_args+=(--jar "$j"); fi; done
+          python3 -I checker/lwjgl_compat_check.py --version "${{ inputs.version || '26.1' }}" "${mod_args[@]}" \
             --lwjgl "launcher/JavaApp/${{ inputs.lwjgl_jar || 'build/lwjgl.jar' }}" --jdk "$JAVA_HOME/jre/lib/rt.jar" --cache "$RUNNER_TEMP/mc-cache" --dump
